@@ -1,108 +1,173 @@
-$(document).ready(function() {
-    console.log("ready");
+// select all elements
+const start = document.getElementById("start");
+const quiz = document.getElementById("quiz");
+const question = document.getElementById("question");
+const qImg = document.getElementById("qImg");
+const choiceA = document.getElementById("A");
+const choiceB = document.getElementById("B");
+const choiceC = document.getElementById("C");
+const choiceD = document.getElementById("D");
+const counter = document.getElementById("counter");
+const timeGauge = document.getElementById("timeGauge");
+const progress = document.getElementById("progress");
+const scoreDiv = document.getElementById("scoreContainer");
 
-    (function() {
-        function buildQuiz() {
-            // we'll need a place to store the HTML output
-            const output = [];
+// create our questions
+let questions = [{
+    question: "What does HTML stand for?",
+    imgSrc: "img/html.png",
+    choiceA: "Hyper text mark-up language",
+    choiceB: "Hicks took my leg",
+    choiceC: "Happy text made-up language",
+    choiceD: "Hyper takeout make language",
+    correct: "A"
+}, {
+    question: "What does CSS stand for?",
+    imgSrc: "img/css.png",
+    choiceA: "Celebrating style stuff",
+    choiceB: "Cascading style sheets",
+    choiceC: "Corny styles and system",
+    choiceD: "Can't stand styling",
+    correct: "B"
+}, {
+    question: "What does JS stand for?",
+    imgSrc: "img/js.png",
+    choiceA: "Just stuff",
+    choiceB: "Judas Priest",
+    choiceC: "Java Script",
+    choiceD: "Java",
+    correct: "C"
+}, {
+    question: "Commonly used data types DO NOT include:",
+    imgSrc: "img/js.png",
+    choiceA: "Alerts",
+    choiceB: "Booleans",
+    choiceC: "Strings",
+    choiceD: "Numbers",
+    correct: "A"
+}, {
+    question: "The condition in an if / else statement is enclosed within ____.",
+    imgSrc: "img/js.png",
+    choiceA: "Quotes",
+    choiceB: "Curly brackets",
+    choiceC: "Parentheses",
+    choiceD: "Square Brackets",
+    correct: "C"
+}];
 
-            // for each question...
-            myQuestions.forEach((currentQuestion, questionNumber) => {
-                // we'll want to store the list of answer choices
-                const answers = [];
+// create some variables
 
-                // and for each available answer...
-                for (letter in currentQuestion.answers) {
-                    // ...add an HTML radio button
-                    answers.push(
-                        `<label>
-              <input type="radio" name="question${questionNumber}" value="${letter}">
-              ${letter} :
-              ${currentQuestion.answers[letter]}
-            </label>`
-                    );
-                }
+const lastQuestion = questions.length - 1;
+let runningQuestion = 0;
+let count = 0;
+const questionTime = 15; // 10s
+const gaugeWidth = 150; // 150px
+const gaugeUnit = gaugeWidth / questionTime;
+let TIMER;
+let score = 0;
 
-                // add this question and its answers to the output
-                output.push(
-                    `<div class="question"> ${currentQuestion.question} </div>
-          <div class="answers"> ${answers.join("")} </div>`
-                );
-            });
 
-            // finally combine our output list into one string of HTML and put it on the page
-            quizContainer.innerHTML = output.join("");
+// render a question
+function renderQuestion() {
+    let q = questions[runningQuestion];
+
+    question.innerHTML = "<p>" + q.question + "</p>";
+    qImg.innerHTML = "<img src=" + q.imgSrc + ">";
+    choiceA.innerHTML = q.choiceA;
+    choiceB.innerHTML = q.choiceB;
+    choiceC.innerHTML = q.choiceC;
+    choiceD.innerHTML = q.choiceD;
+}
+
+start.addEventListener("click", startQuiz);
+
+// start quiz
+function startQuiz() {
+    start.style.display = "none";
+    renderQuestion();
+    quiz.style.display = "block";
+    renderProgress();
+    renderCounter();
+    TIMER = setInterval(renderCounter, 1000); // 1000ms = 1s
+}
+
+// render progress
+function renderProgress() {
+    for (let qIndex = 0; qIndex <= lastQuestion; qIndex++) {
+        progress.innerHTML += "<div class='prog' id=" + qIndex + "></div>";
+    }
+}
+
+// counter render
+
+function renderCounter() {
+    if (count <= questionTime) {
+        counter.innerHTML = count;
+        timeGauge.style.width = count * gaugeUnit + "px";
+        count++
+    } else {
+        count = 0;
+        // change progress color to red
+        answerIsWrong();
+        if (runningQuestion < lastQuestion) {
+            runningQuestion++;
+            renderQuestion();
+        } else {
+            // end the quiz and show the score
+            clearInterval(TIMER);
+            scoreRender();
         }
+    }
+}
 
-        function showResults() {
-            // gather answer containers from our quiz
-            const answerContainers = quizContainer.querySelectorAll(".answers");
+// checkAnwer
 
-            // keep track of user's answers
-            let numCorrect = 0;
+function checkAnswer(answer) {
+    if (answer == questions[runningQuestion].correct) {
+        // answer is correct
+        score++;
+        // change progress color to green
+        answerIsCorrect();
+    } else {
+        // answer is wrong
+        // change progress color to red
+        answerIsWrong();
+    }
+    count = 0;
+    if (runningQuestion < lastQuestion) {
+        runningQuestion++;
+        renderQuestion();
+    } else {
+        // end the quiz and show the score
+        clearInterval(TIMER);
+        scoreRender();
+    }
+}
 
-            // for each question...
-            myQuestions.forEach((currentQuestion, questionNumber) => {
-                // find selected answer
-                const answerContainer = answerContainers[questionNumber];
-                const selector = `input[name=question${questionNumber}]:checked`;
-                const userAnswer = (answerContainer.querySelector(selector) || {}).value;
+// answer is correct
+function answerIsCorrect() {
+    document.getElementById(runningQuestion).style.backgroundColor = "#0f0";
+}
 
-                // if answer is correct
-                if (userAnswer === currentQuestion.correctAnswer) {
-                    // add to the number of correct answers
-                    numCorrect++;
+// answer is Wrong
+function answerIsWrong() {
+    document.getElementById(runningQuestion).style.backgroundColor = "#f00";
+}
 
-                    // color the answers green
-                    answerContainers[questionNumber].style.color = "lightgreen";
-                } else {
-                    // if answer is wrong or blank
-                    // color the answers red
-                    answerContainers[questionNumber].style.color = "red";
-                }
-            });
+// score render
+function scoreRender() {
+    scoreDiv.style.display = "block";
 
-            // show number of correct answers out of total
-            resultsContainer.innerHTML = `${numCorrect} out of ${myQuestions.length}`;
-        }
+    // calculate the amount of question percent answered by the user
+    const scorePerCent = Math.round(100 * score / questions.length);
 
-        const quizContainer = document.getElementById("quiz");
-        const resultsContainer = document.getElementById("results");
-        const submitButton = document.getElementById("submit");
-        const myQuestions = [{
-                question: "Who is the strongest?",
-                answers: {
-                    a: "Superman",
-                    b: "The Terminator",
-                    c: "Waluigi, obviously"
-                },
-                correctAnswer: "c"
-            },
-            {
-                question: "What is the best site ever created?",
-                answers: {
-                    a: "SitePoint",
-                    b: "Simple Steps Code",
-                    c: "Trick question; they're both the best"
-                },
-                correctAnswer: "c"
-            },
-            {
-                question: "Where is Waldo really?",
-                answers: {
-                    a: "Antarctica",
-                    b: "Exploring the Pacific Ocean",
-                    c: "Sitting in a tree",
-                    d: "Minding his own business, so stop asking"
-                },
-                correctAnswer: "d"
-            }
-        ];
+    // choose the image based on the scorePerCent
+    let img = (scorePerCent >= 80) ? "img/5.png" :
+        (scorePerCent >= 60) ? "img/4.png" :
+        (scorePerCent >= 40) ? "img/3.png" :
+        (scorePerCent >= 20) ? "img/2.png" :
+        "img/1.png";
 
-        // display quiz right away
-        buildQuiz();
-
-        // on submit, show results
-        submitButton.addEventListener("click", showResults);
-    });
-});
+    scoreDiv.innerHTML = "<img src=" + img + ">";
+    scoreDiv.innerHTML += "<p>" + scorePerCent + "%</p>";
+}
